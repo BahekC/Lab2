@@ -39,7 +39,7 @@ jobs:
           from zipfile import ZipFile, is_zipfile
           from docx import Document
 
-          files = sorted(Path('generated_docs').glob('*.docx'))
+          files = sorted(p for p in Path('generated_docs').glob('*.docx') if not p.name.startswith('work0'))
           assert len(files) == 4, f'Expected 4 DOCX files, got {len(files)}'
           for file in files:
               assert is_zipfile(file), f'Not a ZIP package: {file}'
@@ -54,6 +54,17 @@ jobs:
               for heading in ('Аннотация', 'Критерии оценивания', 'Чек-лист самопроверки', 'Приложения'):
                   assert heading in text, f'Missing {heading} in {file}'
               print(file.name, len(doc.paragraphs), len(doc.tables))
+          PY
+
+      - name: Create ASCII download aliases
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files = sorted(p for p in Path('generated_docs').glob('*.docx') if not p.name.startswith('work0'))
+          for index, source in enumerate(files, 1):
+              target = source.with_name(f'work{index:02d}.docx')
+              target.write_bytes(source.read_bytes())
+              print(target)
           PY
 
       - name: Commit generated files
